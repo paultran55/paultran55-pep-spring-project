@@ -28,4 +28,8 @@ public class AccountService {
                 .filter(existingAccount -> existingAccount.getPassword().equals(account.getPassword()));
     }
 
+    public boolean accountExists(Integer accountId) {
+        return accountRepository.existsById(accountId);
+    }
+
 }

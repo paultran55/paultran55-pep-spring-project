@@ -33,34 +33,35 @@ public class MessageService {
     }
 
     public Message getMessageById(Integer messageId) {
-        return messageRepository.findById(messageId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return messageRepository.findById(messageId).orElse(null);
     }
 
-    public void deleteMessage(Integer messageId) {
+    public boolean deleteMessage(Integer messageId) {
         if (messageRepository.existsById(messageId)) {
             messageRepository.deleteById(messageId);
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            return true;
         }
+        return false;
     }
 
-    public Message updateMessage(Integer messageId, String newMessageText) {
+    public int updateMessage(Integer messageId, String newMessageText) {
+        if (newMessageText == null || newMessageText.trim().isEmpty() || newMessageText.length() > 255) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid message text");
+        }   // Empty string is somehow passing through even though it is getting checked...
+        
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message not found"));
 
-        if (newMessageText != null && !newMessageText.isEmpty() && newMessageText.length() <= 255) {
-            message.setMessageText(newMessageText);
-            return messageRepository.save(message);
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        }
+        message.setMessageText(newMessageText);
+        messageRepository.save(message);
+
+        return 1;
     }
 
     public List<Message> getMessagesByUser(Integer userId) {
         Account account = accountRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
-        return messageRepository.findByPostedBy(account);
+        return messageRepository.findByPostedBy(userId);
     }
 
 }

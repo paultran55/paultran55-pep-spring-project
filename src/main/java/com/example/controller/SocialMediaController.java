@@ -44,13 +44,22 @@ public class SocialMediaController {
     }
 
     @PostMapping("/messages")
-    public Message createMessage(@RequestBody Message message, @RequestParam Integer userId) {
-        return messageService.createMessage(message, userId);
+    public Message createMessage(@RequestBody Message message) {
+        if (message.getMessageText() == null || message.getMessageText().isBlank() || message.getMessageText().length() > 255) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message text is either blank or exceeds 255 characters.");
+        }
+        if (message.getPostedBy() == null || !accountService.accountExists(message.getPostedBy())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user: postedBy must refer to an existing user.");
+        }
+    
+        return messageService.createMessage(message, message.getPostedBy());
     }
 
     @GetMapping("/messages")
     public List<Message> getAllMessages() {
-        return messageService.getAllMessages();
+        List<Message> messages = messageService.getAllMessages();
+    
+        return messages;
     }
 
     @GetMapping("/messages/{messageId}")
@@ -59,12 +68,14 @@ public class SocialMediaController {
     }
 
     @DeleteMapping("/messages/{messageId}")
-    public void deleteMessage(@PathVariable Integer messageId) {
-        messageService.deleteMessage(messageId);
+    public Integer deleteMessage(@PathVariable Integer messageId) {
+        boolean deleted = messageService.deleteMessage(messageId);
+
+        return deleted ? 1 : null;
     }
 
     @PatchMapping("/messages/{messageId}")
-    public Message updateMessage(@PathVariable Integer messageId, @RequestBody String newMessageText) {
+    public int updateMessage(@PathVariable Integer messageId, @RequestBody String newMessageText) {
         return messageService.updateMessage(messageId, newMessageText);
     }
 
